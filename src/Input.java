@@ -10,12 +10,12 @@ public class Input {
 
     private static final HashSet<KeyCode> keysDown = new HashSet<>();
     private static final HashSet<MouseButton> mouseDown = new HashSet<>();
-    private static final Vector2 currMousePos = new Vector2(0, 0);
-    private static final Vector2 prevMousePos = new Vector2(0, 0);
+    private static final Vector3 currMousePos = new Vector3(0, 0);
+    private static final Vector3 prevMousePos = new Vector3(0, 0);
     private static boolean mouseInBounds = false;
 
 
-    public static void initializeInput() {
+    public static void initializeInput(SceneRenderer3D sceneRenderer) {
         Main.windowScene.setOnKeyPressed(null);
         Main.windowScene.setOnKeyReleased(null);
 
@@ -37,19 +37,19 @@ public class Input {
             }
         });
 
-        Main.renderCanvas.setOnMousePressed(mouse -> {
+        sceneRenderer.setOnMousePressed(mouse -> {
             mouseDown.add(mouse.getButton());
         });
 
-        Main.renderCanvas.setOnMouseReleased(mouse -> {
+        sceneRenderer.setOnMouseReleased(mouse -> {
             mouseDown.remove(mouse.getButton());
         });
     }
 
 
-    public static void pollInput() {
+    public static void pollInput(SceneRenderer3D sceneRenderer) {
         Point mouseScreenPos = MouseInfo.getPointerInfo().getLocation();
-        Point2D mouseLocalPos = Main.renderCanvas.screenToLocal(mouseScreenPos.getX(), mouseScreenPos.getY());
+        Point2D mouseLocalPos = sceneRenderer.screenToLocal(mouseScreenPos.getX(), mouseScreenPos.getY());
 
         prevMousePos.setX(currMousePos.getX());
         prevMousePos.setY(currMousePos.getY());
@@ -66,11 +66,11 @@ public class Input {
         return mouseDown.contains(mouseButton);
     }
 
-    public static Vector2 getMousePosition() {
+    public static Vector3 getMousePosition() {
         return currMousePos;
     }
 
-    public static Vector2 getMouseDelta() {
+    public static Vector3 getMouseDelta() {
         return currMousePos.subtract(prevMousePos).multiply(0.1);
     }
 

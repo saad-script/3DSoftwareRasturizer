@@ -1,5 +1,6 @@
-public class Vector3 extends Vector2{
+public class Vector3 {
 
+    public static final Vector3 ZERO = new Vector3(0, 0 ,0);
     public static final Vector3 UP = new Vector3(0, 1, 0);
     public static final Vector3 FORWARD = new Vector3(0, 0, 1);
     public static final Vector3 RIGHT = new Vector3(1, 0, 0);
@@ -7,11 +8,28 @@ public class Vector3 extends Vector2{
     public static final Vector3 BACKWARD = new Vector3(0, 0, -1);
     public static final Vector3 LEFT = new Vector3(-1, 0, 0);
 
+    private double x;
+    private double y;
     private double z;
+    private double w = 1;
+
+    public Vector3(double x, double y, double z, double w) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.w = w;
+    }
 
     public Vector3(double x, double y, double z) {
-        super(x, y);
+        this.x = x;
+        this.y = y;
         this.z = z;
+    }
+
+    public Vector3(double x, double y) {
+        this.x = x;
+        this.y = y;
+        this.z = 0;
     }
 
     public double magnitude() {
@@ -73,12 +91,16 @@ public class Vector3 extends Vector2{
         return new Vector3(Math.abs(vector.x), Math.abs(vector.y), Math.abs(vector.z));
     }
 
-    public double getZ() {
-        return z;
+    public Vector3 clampNormalized() {
+        Vector3 result = this.clone();
+        result.x = clamp(x, 0, 1);
+        result.y = clamp(y, 0, 1);
+        result.z = clamp(z, 0, 1);
+        return result;
     }
 
-    public void setZ(double z) {
-        this.z = z;
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     public String toString() {
@@ -90,16 +112,45 @@ public class Vector3 extends Vector2{
 
     }
 
-    public Vector3 clampNormalized() {
-        Vector3 result = this.clone();
-        result.x = clamp(x, 0, 1);
-        result.y = clamp(y, 0, 1);
-        result.z = clamp(z, 0, 1);
-        return result;
+    public void copy(Vector3 otherVector) {
+        this.x = otherVector.x;
+        this.y = otherVector.y;
+        this.z = otherVector.z;
+        this.w = otherVector.w;
     }
 
-    private double clamp(double value, double min, double max) {
-        return Math.max(min, Math.min(max, value));
+    public double getX() {
+        return x;
+    }
+
+    public void setX(double x) {
+        this.x = x;
+    }
+
+
+    public double getY() {
+        return y;
+    }
+
+    public void setY(double y) {
+        this.y = y;
+    }
+
+
+    public double getZ() {
+        return z;
+    }
+
+    public void setZ(double z) {
+        this.z = z;
+    }
+
+    public double getW() {
+        return w;
+    }
+
+    public void setW(double w) {
+        this.w = w;
     }
 
 }

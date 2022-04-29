@@ -1,18 +1,24 @@
 public class Matrix4 {
 
-    private double[][] matrix;
+    public static final Matrix4 identityMatrix = getIdentityMatrix();
+    public static Matrix4 translationMatrix = getIdentityMatrix();
+    public static Matrix4 rotationMatrix = getIdentityMatrix();
+    public static Matrix4 scaleMatrix = getIdentityMatrix();
+    public static Matrix4 projectionMatrix = new Matrix4();
+    public static Matrix4 viewMatrix = new Matrix4();
+    private double[][] values;
 
     public Matrix4() {
-        matrix = new double[4][4];
+        values = new double[4][4];
     }
 
     public Matrix4 initIdentity() {
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 if (i == j)
-                    matrix[i][j] = 1.0f;
+                    values[i][j] = 1.0f;
                 else
-                    matrix[i][j] = 0.0f;
+                    values[i][j] = 0.0f;
             }
         }
         return this;
@@ -23,117 +29,105 @@ public class Matrix4 {
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
 
-                result.matrix[i][j] =
-                        matrix[i][0] * otherMatrix.matrix[0][j] +
-                        matrix[i][1] * otherMatrix.matrix[1][j] +
-                        matrix[i][2] * otherMatrix.matrix[2][j] +
-                        matrix[i][3] * otherMatrix.matrix[3][j];
+                result.values[i][j] =
+                        values[i][0] * otherMatrix.values[0][j] +
+                        values[i][1] * otherMatrix.values[1][j] +
+                        values[i][2] * otherMatrix.values[2][j] +
+                        values[i][3] * otherMatrix.values[3][j];
 
             }
         }
         return result;
     }
 
-    public Matrix4 transpose() {
-        for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 4; j++)
-                matrix[i][j] = matrix[j][i];
-        return this;
-    }
-
     public double get(int x, int y) {
-        return matrix[x][y];
+        return values[x][y];
     }
 
     public void set(int x, int y, double value) {
-        matrix[x][y] = value;
+        values[x][y] = value;
     }
 
     public double[][] getMatrix() {
-        return matrix;
+        return values;
     }
 
-    public void setMatrix(double[][] matrix) {
-        this.matrix = matrix;
+    public void setMatrix(double[][] values) {
+        this.values = values;
     }
 
     public static Matrix4 getTranslationMatrix(double x, double y, double z) {
-        Matrix4 m = Matrix4.getIdentityMatrix();
 
-        m.matrix[3][0] = x;
-        m.matrix[3][1] = y;
-        m.matrix[3][2] = z;
+        translationMatrix.values[3][0] = x;
+        translationMatrix.values[3][1] = y;
+        translationMatrix.values[3][2] = z;
 
-        return m;
+        return translationMatrix;
     }
 
     public static Matrix4 getRotationMatrix(double x, double y, double z) {
-        Matrix4 rx = Matrix4.getIdentityMatrix();
-        Matrix4 ry = Matrix4.getIdentityMatrix();
-        Matrix4 rz = Matrix4.getIdentityMatrix();
+        Matrix4 rx = getIdentityMatrix();
+        Matrix4 ry = getIdentityMatrix();
+        Matrix4 rz = getIdentityMatrix();
 
         x = Math.toRadians(x);
         y = Math.toRadians(y);
         z = Math.toRadians(z);
 
-        rx.matrix[1][1] = Math.cos(x); rx.matrix[1][2] = Math.sin(x);
-        rx.matrix[2][1] = -Math.sin(x); rx.matrix[2][2] = Math.cos(x);
+        rx.values[1][1] = Math.cos(x); rx.values[1][2] = -Math.sin(x);
+        rx.values[2][1] = Math.sin(x); rx.values[2][2] = Math.cos(x);
 
-        ry.matrix[0][0] = Math.cos(y); ry.matrix[0][2] = -Math.sin(y);
-        ry.matrix[2][0] = Math.sin(y); ry.matrix[2][2] = Math.cos(y);
+        ry.values[0][0] = Math.cos(y); ry.values[0][2] = -Math.sin(y);
+        ry.values[2][0] = Math.sin(y); ry.values[2][2] = Math.cos(y);
 
-        rz.matrix[0][0] = Math.cos(z); rz.matrix[0][1] = -Math.sin(z);
-        rz.matrix[1][0] = Math.sin(z); rz.matrix[1][1] = Math.cos(z);
+        rz.values[0][0] = Math.cos(z); rz.values[0][1] = -Math.sin(z);
+        rz.values[1][0] = Math.sin(z); rz.values[1][1] = Math.cos(z);
 
         return rx.multiply(ry).multiply(rz);
     }
 
     public static Matrix4 getScaleMatrix(double x, double y, double z) {
-        Matrix4 m = new Matrix4();
-        m.matrix[0][0] = x;
-        m.matrix[1][1] = y;
-        m.matrix[2][2] = z;
-        m.matrix[3][3] = 1.0f;
-        return m;
+        scaleMatrix.values[0][0] = x;
+        scaleMatrix.values[1][1] = y;
+        scaleMatrix.values[2][2] = z;
+        scaleMatrix.values[3][3] = 1.0f;
+        return scaleMatrix;
     }
 
     public static Matrix4 getIdentityMatrix() {
         Matrix4 m = new Matrix4();
-        m.matrix[0][0] = 1.0f;
-        m.matrix[1][1] = 1.0f;
-        m.matrix[2][2] = 1.0f;
-        m.matrix[3][3] = 1.0f;
+        m.values[0][0] = 1.0f;
+        m.values[1][1] = 1.0f;
+        m.values[2][2] = 1.0f;
+        m.values[3][3] = 1.0f;
         return m;
     }
 
     public static Matrix4 getProjectionMatrix(double width, double height, double FOV, double zNearClip, double zFarClip) {
-        Matrix4 m = new Matrix4();
+
         double tanHalfFOV = (Math.tan(Math.toRadians(FOV / 2)));
         double aspectRatio = height / width;
-        m.matrix[0][0] = aspectRatio / (tanHalfFOV);
-        m.matrix[1][1] = 1.0f / tanHalfFOV;
-        m.matrix[2][2] = (zFarClip) / (zFarClip - zNearClip);
-        m.matrix[3][2] = (-zFarClip * zNearClip) / (zFarClip - zNearClip);
-        m.matrix[2][3] = 1;
+        projectionMatrix.values[0][0] = aspectRatio / (tanHalfFOV);
+        projectionMatrix.values[1][1] = 1.0f / tanHalfFOV;
+        projectionMatrix.values[2][2] = (zFarClip) / (zFarClip - zNearClip);
+        projectionMatrix.values[3][2] = (-zFarClip * zNearClip) / (zFarClip - zNearClip);
+        projectionMatrix.values[2][3] = 1;
 
-        return m;
+        return projectionMatrix;
     }
 
-    public static Matrix4 getViewMatrix(Vector3 forward, Vector3 up, Vector3 pos) {
+    public static Matrix4 getViewMatrix(Vector3 forward, Vector3 up) {
 
-        Matrix4 m = new Matrix4();
         Vector3 forwardCopy = forward.clone().normalized();
         Vector3 upCopy = up.clone().normalized();
-
         Vector3 right = upCopy.cross(forwardCopy);
 
+        viewMatrix.values[0][0] = right.getX();          viewMatrix.values[0][1] = upCopy.getX();         viewMatrix.values[0][2] = forwardCopy.getX();
+        viewMatrix.values[1][0] = right.getY();          viewMatrix.values[1][1] = upCopy.getY();         viewMatrix.values[1][2] = forwardCopy.getY();
+        viewMatrix.values[2][0] = right.getZ();          viewMatrix.values[2][1] = upCopy.getZ();         viewMatrix.values[2][2] = forwardCopy.getZ();
+        viewMatrix.values[3][3] = 1;
 
-        m.matrix[0][0] = right.getX();          m.matrix[0][1] = upCopy.getX();         m.matrix[0][2] = forwardCopy.getX();        //m.matrix[0][3] = pos.getX();
-        m.matrix[1][0] = right.getY();          m.matrix[1][1] = upCopy.getY();         m.matrix[1][2] = forwardCopy.getY();        //m.matrix[1][3] = pos.getY();
-        m.matrix[2][0] = right.getZ();          m.matrix[2][1] = upCopy.getZ();         m.matrix[2][2] = forwardCopy.getZ();        //m.matrix[2][3] = pos.getZ();
-        m.matrix[3][3] = 1;
-
-        return m;
+        return viewMatrix;
     }
 
 

@@ -5,26 +5,19 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-
-import java.beans.EventHandler;
 
 public class Main extends Application {
 
     static int width = 1280;
     static int height = 720;
-    static double[][] depthBuffer = new double[width][height];;
     static Camera camera = new Camera();
 
     static Stage mainWindow;
-    static RenderScene renderScene;
+    static SceneRenderer3D sceneRenderer;
     static Scene windowScene;
-    static Canvas renderCanvas;
-    static GraphicsContext renderer;
-
     static AnimationTimer timer;
     static double deltaTime;
     static double passedTime;
@@ -38,15 +31,14 @@ public class Main extends Application {
         mainWindow = primaryStage;
         mainWindow.setWidth(width);
         mainWindow.setHeight(height);
-        renderScene = new RenderScene();
-        renderCanvas = new Canvas(width, height);
-        renderer = renderCanvas.getGraphicsContext2D();
-        Group group = new Group(renderCanvas);
+        sceneRenderer = new SceneRenderer3D(width, height);
+
+        Group group = new Group(sceneRenderer);
         windowScene = new Scene(group, width, height);
         mainWindow.setScene(windowScene);
         mainWindow.show();
 
-        Input.initializeInput();
+        Input.initializeInput(sceneRenderer);
         Main.camera.move(Vector3.BACKWARD, 10);
 
         loadScene();
@@ -60,11 +52,15 @@ public class Main extends Application {
                 checkInput();
                 draw();
                 prevTime = currentTime;
+                System.out.println("Frame Rate: " + 1 / deltaTime);
             }
         };
 
 
         timer.start();
+
+        //double distance = Triangle.pointDistanceToPlane(new Vector3(0, 0, 1), new Vector3(0, 0, 0), new Vector3(0, 0, -1));
+
 
 
     }
@@ -73,7 +69,7 @@ public class Main extends Application {
 
     public void loadScene() {
 
-        /*Vertex[] vertices = new Vertex[]
+        Vertex[] vertices = new Vertex[]
                 {
                         new Vertex(0, 0, 0), new Vertex(0, 1, 0), new Vertex(1, 1, 0),
                         new Vertex(0, 0, 0), new Vertex(1, 1, 0), new Vertex(1, 0, 0),
@@ -89,31 +85,28 @@ public class Main extends Application {
                         new Vertex(1, 0, 1), new Vertex(0, 0, 0), new Vertex(1, 0, 0)
                 };
 
-        Mesh mesh = new Mesh(vertices);
-         */
-
-        Mesh mesh = new Mesh("./res/textured_cube.obj");
+        //Mesh mesh = new Mesh(vertices);
 
 
+        Mesh mesh = new Mesh("./res/captain_model.obj");
 
-        if (!renderScene.meshes.contains(mesh))
-            renderScene.meshes.add(mesh);
+
+        if (!sceneRenderer.meshes.contains(mesh))
+            sceneRenderer.meshes.add(mesh);
 
     }
 
 
 
     public void draw() {
-        // clear screen
-        renderer.setFill(Color.BLACK);
-        renderer.fillRect(0, 0, width, height);
         // draw
-        renderScene.draw();
+        sceneRenderer.clearCanvas();
+        sceneRenderer.render();
     }
 
     public void checkInput() {
 
-        Input.pollInput();
+        Input.pollInput(sceneRenderer);
 
         if (Input.keyIsDown(KeyCode.W)) {
             camera.move(camera.getForward(), 20 * Main.deltaTime);
@@ -129,10 +122,8 @@ public class Main extends Application {
         }
 
 
-
-        if (Input.mouseIsDown(MouseButton.MIDDLE)) {
-            camera.rotate(Input.getMouseDelta().getY(), Input.getMouseDelta().getX(), 0);
-            System.out.println(camera.getForward());
+        if (Input.mouseIsDown(MouseButton.PRIMARY)) {
+            camera.rotate(-Input.getMouseDelta().getY(), Input.getMouseDelta().getX(), 0);
         }
 
 

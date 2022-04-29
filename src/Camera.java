@@ -4,14 +4,15 @@ public class Camera {
     private Vector3 forward;
     private Vector3 up;
 
-    public Camera(Vector3 position, Vector3 forward, Vector3 up) {
+    public Camera(Vector3 position, Vector3 forward) {
         this.position = position;
         this.forward = forward.normalized();
-        this.up = up.normalized();
+        Vector3 horizontalAxis = Vector3.UP.cross(forward).normalized();
+        this.up = forward.cross(horizontalAxis).normalized();
     }
 
     public Camera() {
-        this(new Vector3(0, 0, 0), new Vector3(0, 0, 1), new Vector3(0, 1, 0));
+        this(new Vector3(0, 0, 0), new Vector3(0, 0, 1));
     }
 
     public Vector3 getPosition() {
@@ -57,7 +58,7 @@ public class Camera {
     }
 
     public void move(Vector3 direction, double amount) {
-        position = position.add(direction.multiply(amount));
+        position = position.add(direction.normalized().multiply(amount));
     }
 
     public void rotate(double angleX, double angleY, double angleZ) {
