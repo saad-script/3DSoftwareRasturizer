@@ -7,18 +7,47 @@ public class EdgeTracker {
     private Vector3 currentPosition;
     private double xIncY = 0;
     private double zIncY = 0;
-    private double slope = 0;
 
+    private double yIncX = 0;
+    private double zIncX = 0;
+
+    private boolean useXStep = false;
 
     public EdgeTracker(Vector3 startEdgePoint, Vector3 endEdgePoint) {
+        this(startEdgePoint, endEdgePoint, false);
+    }
+
+    public EdgeTracker(Vector3 startEdgePoint, Vector3 endEdgePoint, boolean useXStep) {
+
+        if (useXStep) {
+            if ((int) Math.ceil(startEdgePoint.getX()) > (int) Math.ceil(endEdgePoint.getX())) {
+                Vector3 temp = startEdgePoint;
+                startEdgePoint = endEdgePoint;
+                endEdgePoint = temp;
+            }
+        } else {
+            if ((int) Math.ceil(startEdgePoint.getY()) > (int) Math.ceil(endEdgePoint.getY())) {
+                Vector3 temp = startEdgePoint;
+                startEdgePoint = endEdgePoint;
+                endEdgePoint = temp;
+            }
+        }
 
         this.startEdgePoint = startEdgePoint;
         this.endEdgePoint = endEdgePoint;
+        this.useXStep = useXStep;
 
         this.currentPosition = startEdgePoint.clone();
 
-        if (Math.abs(startEdgePoint.getY() - endEdgePoint.getY()) > EPSILON) {
-            this.slope = (startEdgePoint.getX() - endEdgePoint.getX()) / (startEdgePoint.getY() - endEdgePoint.getY());
+        if (useXStep) {
+            yIncX = (startEdgePoint.getY() - endEdgePoint.getY()) / (startEdgePoint.getX() - endEdgePoint.getX());
+            zIncX = (startEdgePoint.getZ() - endEdgePoint.getZ()) / (startEdgePoint.getX() - endEdgePoint.getX());
+            double yPreIncX = yIncX * (Math.ceil(currentPosition.getX()) - currentPosition.getX());
+            double zPreIncX = zIncX * (Math.ceil(currentPosition.getX()) - currentPosition.getX());
+            currentPosition.setX(Math.ceil(currentPosition.getX()));
+            currentPosition.setY(currentPosition.getY() + yPreIncX);
+            currentPosition.setZ(currentPosition.getZ() + zPreIncX);
+        } else {
             xIncY = (startEdgePoint.getX() - endEdgePoint.getX()) / (startEdgePoint.getY() - endEdgePoint.getY());
             zIncY = (startEdgePoint.getZ() - endEdgePoint.getZ()) / (startEdgePoint.getY() - endEdgePoint.getY());
             double xPreIncY = xIncY * (Math.ceil(currentPosition.getY()) - currentPosition.getY());
@@ -31,16 +60,21 @@ public class EdgeTracker {
 
     }
 
+    public void step() {
+        if (useXStep)
+            stepX();
+        else
+            stepY();
+    }
+    public void stepX() {
+        currentPosition.setX(currentPosition.getX() + 1);
+        currentPosition.setY(currentPosition.getY() + yIncX);
+        currentPosition.setZ(currentPosition.getZ() + zIncX);
+    }
     public void stepY() {
         currentPosition.setY(currentPosition.getY() + 1);
         currentPosition.setX(currentPosition.getX() + xIncY);
         currentPosition.setZ(currentPosition.getZ() + zIncY);
-    }
-
-    public void stepY(double amount) {
-        currentPosition.setY(currentPosition.getY() + amount);
-        currentPosition.setX(currentPosition.getX() + (xIncY * amount));
-        currentPosition.setZ(currentPosition.getZ() + (zIncY * amount));
     }
 
     public int getYStart() {
@@ -49,6 +83,14 @@ public class EdgeTracker {
 
     public int getYEnd() {
         return (int) Math.ceil(endEdgePoint.getY());
+    }
+
+    public int getXStart() {
+        return (int) Math.ceil(startEdgePoint.getX());
+    }
+
+    public int getXEnd() {
+        return (int) Math.ceil(endEdgePoint.getX());
     }
 
     public Vector3 getStartEdgePoint() {
@@ -61,10 +103,6 @@ public class EdgeTracker {
 
     public Vector3 getCurrentPosition() {
         return currentPosition;
-    }
-
-    public double getSlope() {
-        return slope;
     }
 
 

@@ -88,7 +88,7 @@ public class Main extends Application {
         //Mesh mesh = new Mesh(vertices);
 
 
-        Mesh mesh = new Mesh("./res/captain_model.obj");
+        Mesh mesh = new Mesh("./res/Realistic_Body_Base_Mesh.obj");
 
 
         if (!sceneRenderer.meshes.contains(mesh))
@@ -100,8 +100,7 @@ public class Main extends Application {
 
     public void draw() {
         // draw
-        sceneRenderer.clearCanvas();
-        sceneRenderer.render();
+        sceneRenderer.nextFrame();
     }
 
     public void checkInput() {
@@ -109,16 +108,16 @@ public class Main extends Application {
         Input.pollInput(sceneRenderer);
 
         if (Input.keyIsDown(KeyCode.W)) {
-            camera.move(camera.getForward(), 20 * Main.deltaTime);
+            camera.move(camera.getForward(), 5 * Main.deltaTime);
         }
         if (Input.keyIsDown(KeyCode.A)) {
-            camera.move(camera.getLeft(), 20 * Main.deltaTime);
+            camera.move(camera.getLeft(), 5 * Main.deltaTime);
         }
         if (Input.keyIsDown(KeyCode.S)) {
-            camera.move(camera.getBackward(), 20 * Main.deltaTime);
+            camera.move(camera.getBackward(), 5 * Main.deltaTime);
         }
         if (Input.keyIsDown(KeyCode.D)) {
-            camera.move(camera.getRight(), 20 * Main.deltaTime);
+            camera.move(camera.getRight(), 5 * Main.deltaTime);
         }
 
 

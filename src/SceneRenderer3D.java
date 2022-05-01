@@ -12,9 +12,9 @@ public class SceneRenderer3D extends Canvas{
     int canvasWidth;
     int canvasHeight;
     public ArrayList<Mesh> meshes = new ArrayList<>();
-    public boolean wireframe = false;
-    public boolean fill = true;
-    public boolean transparent = false;
+    public boolean wireframe = true;
+    public boolean fill = false;
+    public boolean transparent = true;
     private final GraphicsContext canvasPen;
     private final Queue<Triangle> renderQueue = new LinkedList<>();
     private final double[][] depthBuffer;
@@ -30,10 +30,18 @@ public class SceneRenderer3D extends Canvas{
         clearCanvas();
     }
 
+    public void nextFrame() {
+        clearCanvas();
+        clearDepthBuffer();
+        render();
+    }
+
     public void clearCanvas() {
         canvasPen.setFill(Color.BLACK);
         canvasPen.fillRect(0, 0, canvasWidth, canvasHeight);
+    }
 
+    public void clearDepthBuffer() {
         for (int i = 0; i < canvasWidth; i++) {
             for (int j = 0; j < canvasHeight; j++) {
                 depthBuffer[i][j] = Double.MAX_VALUE;
@@ -51,10 +59,15 @@ public class SceneRenderer3D extends Canvas{
             Triangle t = renderQueue.remove();
             Vector3[] triPoints = t.getPositions();
 
+
                 if (fill)
                     drawScanLines(triPoints, t.color);
+                else
+                    drawScanLines(triPoints, Color.BLACK);
+
                 if (wireframe)
                     drawWireframe(triPoints, Color.BEIGE);
+
                 if (fill || wireframe)
                     numTrisCurrentlyRendering++;
 
@@ -90,9 +103,9 @@ public class SceneRenderer3D extends Canvas{
                     Vector3[] triPoints = {clippedTris[j], clippedTris[j + 1], clippedTris[j + 2]};
                     Triangle t = new Triangle(triPoints);
 
-                    t.color = new Color(Math.max(0.1, diffuse) * baseColor.getRed(),
-                                            Math.max(0.1, diffuse) * baseColor.getGreen(),
-                                            Math.max(0.1, diffuse) * baseColor.getBlue(), 1);
+                    t.color = new Color(Math.min(1, Math.max(0.1, diffuse) * baseColor.getRed()),
+                                            Math.min(1, Math.max(0.1, diffuse) * baseColor.getGreen()),
+                                            Math.min(1, Math.max(0.1, diffuse) * baseColor.getBlue()), 1);
 
                     renderQueue.add(t);
                 }
@@ -270,8 +283,8 @@ public class SceneRenderer3D extends Canvas{
             double zInc = (zStart - zEnd) / (xStart - xEnd);
 
             for (int x = xStart; x < xEnd; x++) {
-                double pixelDepth = zStart + (zInc * (x - xStart));
-                if (pixelDepth < depthBuffer[x][y] || transparent) {
+                double pixelDepth = (zStart + (zInc * (x - xStart)));
+                if (pixelDepth < depthBuffer[x][y]) {
                     canvasPen.getPixelWriter().setColor(x, y, color);
                     depthBuffer[x][y] = pixelDepth;
                 }
@@ -283,43 +296,41 @@ public class SceneRenderer3D extends Canvas{
     }
 
     private void drawWireframe(Vector3[] triPoints, Color color) {
-        sortPoints(triPoints);
-        drawLine((int) Math.ceil(triPoints[0].getX()), (int) Math.ceil(triPoints[0].getY()),
-                (int) Math.ceil(triPoints[2].getX()), (int) Math.ceil(triPoints[2].getY()), color);
-        drawLine((int) Math.ceil(triPoints[0].getX()), (int) Math.ceil(triPoints[0].getY()),
-                (int) Math.ceil(triPoints[1].getX()), (int) Math.ceil(triPoints[1].getY()), color);
-        drawLine((int) Math.ceil(triPoints[1].getX()), (int) Math.ceil(triPoints[1].getY()),
-                (int) Math.ceil(triPoints[2].getX()), (int) Math.ceil(triPoints[2].getY()), color);
+        drawEdge(triPoints[0], triPoints[2], color);
+        drawEdge(triPoints[0], triPoints[1], color);
+        drawEdge(triPoints[1], triPoints[2], color);
 
     }
 
-    private void drawLine(int x0, int y0, int x1, int y1, Color color) {
-        boolean steep = false;
-        if (Math.abs(x0 - x1) < Math.abs(y0 - y1)) {
-            int temp = x0; x0 = y0; y0 = temp;
-            temp = x1; x1 = y1; y1 = temp;
-            steep = true;
+    private void drawEdge(Vector3 startPoint, Vector3 endPoint, Color color) {
+        boolean useXStep =
+                Math.abs(startPoint.getX() - endPoint.getX()) > Math.abs(startPoint.getY() - endPoint.getY());
+
+        EdgeTracker edge = new EdgeTracker(startPoint, endPoint, useXStep);
+
+        int current, end;
+        if (useXStep) {
+            current = edge.getXStart();
+            end = edge.getXEnd();
+        } else {
+            current = edge.getYStart();
+            end = edge.getYEnd();
         }
-        if (x0 > x1) {
-            int temp = x0; x0 = x1; x1 = temp;
-            temp = y0; y0 = y1; y1 = temp;
-        }
-        int dx = x1 - x0;
-        int dy = y1 - y0;
-        int derror2 = Math.abs(dy) * 2;
-        int error2 = 0;
-        int y = y0;
-        for (int x = x0; x <= x1; x++) {
-            if (steep) {
-                canvasPen.getPixelWriter().setColor(y, x, color);
-            } else {
+
+        while (current < end) {
+            int x = (int) Math.ceil(edge.getCurrentPosition().getX());
+            int y = (int) Math.ceil(edge.getCurrentPosition().getY());
+            double pixelDepth = edge.getCurrentPosition().getZ() * 0.99;
+
+            if (pixelDepth < depthBuffer[x][y] || transparent) {
                 canvasPen.getPixelWriter().setColor(x, y, color);
             }
-            error2 += derror2;
-            if (error2 > dx) {
-                y += (y1 > y0 ? 1 : -1);
-                error2 -= dx*2;
-            }
+
+            edge.step();
+            if (useXStep)
+                current = (int) Math.ceil(edge.getCurrentPosition().getX());
+            else
+                current = (int) Math.ceil(edge.getCurrentPosition().getY());
         }
     }
 
@@ -341,7 +352,6 @@ public class SceneRenderer3D extends Canvas{
             points[2] = temp;
         }
     }
-
 
 
 }
