@@ -14,7 +14,7 @@ public class SceneRenderer3D extends Canvas{
     public ArrayList<Mesh> meshes = new ArrayList<>();
     public boolean wireframe = true;
     public boolean fill = false;
-    public boolean transparent = true;
+    public boolean transparent = false;
     private final GraphicsContext canvasPen;
     private final Queue<Triangle> renderQueue = new LinkedList<>();
     private final double[][] depthBuffer;
