@@ -109,7 +109,6 @@ public class Vector3 {
 
     public Vector3 clone() {
         return new Vector3(x, y, z);
-
     }
 
     public void copy(Vector3 otherVector) {

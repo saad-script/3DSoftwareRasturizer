@@ -12,9 +12,10 @@ public class Vertex {
     public Vertex(Vector3 position) {
         this.position = position;
     }
-    public Vertex(Vector3 position, Vector3 textCoord) {
+    public Vertex(Vector3 position, Vector3 textCoord, Vector3 normal) {
         this.position = position;
         this.textCoord = textCoord;
+        this.normal = normal;
     }
 
     public Vertex(double xPos, double yPos, double zPos) {
@@ -49,6 +50,10 @@ public class Vertex {
         return getPosition().getZ();
     }
 
+    public double getW() {
+        return getPosition().getW();
+    }
+
     public double getU() {
         return getTextCoord().getX();
     }
@@ -70,6 +75,6 @@ public class Vertex {
     }
 
     public Vertex clone() {
-        return new Vertex(position.clone(), textCoord.clone());
+        return new Vertex(position.clone(), textCoord.clone(), normal.clone());
     }
 }

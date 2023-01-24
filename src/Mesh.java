@@ -1,6 +1,4 @@
 import javafx.scene.paint.Color;
-
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,6 +9,7 @@ public class Mesh {
     Triangle[] triangles;
     Vector3 center;
 
+    Texture texture;
     Color baseColor = new Color(1, 0, 0, 1);
 
     Mesh(Triangle[] triangles) {
@@ -37,9 +36,9 @@ public class Mesh {
 
         try {
             Scanner scanner = new Scanner(new FileReader(OBJFilePath));
-            ArrayList<Vertex> vertices = new ArrayList<>();
             ArrayList<Vector3> positions = new ArrayList<>();
             ArrayList<Vector3> textCoords = new ArrayList<>();
+            ArrayList<Vector3> normals = new ArrayList<>();
             ArrayList<Triangle> triangles = new ArrayList<>();
             while (scanner.hasNext()) {
                 String line = scanner.nextLine().trim();
@@ -58,6 +57,11 @@ public class Mesh {
                     double u = Double.parseDouble(tokens[1]);
                     double v = Double.parseDouble(tokens[2]);
                     textCoords.add(new Vector3(u, v));
+                } else if (tokens[0].equals("vn")) {
+                    double x = Double.parseDouble(tokens[1]);
+                    double y = Double.parseDouble(tokens[2]);
+                    double z = Double.parseDouble(tokens[3]);
+                    normals.add(new Vector3(x, y, z));
                 } else if (tokens[0].equals("f")) {
                     String[] components1 = tokens[1].split("/");
                     String[] components2 = tokens[2].split("/");
@@ -78,11 +82,25 @@ public class Mesh {
                         textureIndex3 = Integer.parseInt(components3[1]) - 1;
                     }
 
+                    int normalIndex1 = 0;
+                    int normalIndex2 = 0;
+                    int normalIndex3 = 0;
+                    if (numData > 2) {
+                        normalIndex1 = Integer.parseInt(components1[2]) - 1;
+                        normalIndex2 = Integer.parseInt(components2[2]) - 1;
+                        normalIndex3 = Integer.parseInt(components3[2]) - 1;
+                    }
+
                     if (textCoords.size() == 0)
                         textCoords.add(new Vector3(0, 0 , 0));
-                    Vertex vertex1 = new Vertex(positions.get(positionIndex1), textCoords.get(textureIndex1));
-                    Vertex vertex2 = new Vertex(positions.get(positionIndex2), textCoords.get(textureIndex2));
-                    Vertex vertex3 = new Vertex(positions.get(positionIndex3), textCoords.get(textureIndex3));
+
+                    if (normals.size() == 0) {
+                        normals.add(new Vector3(0, 0, 0));
+                    }
+
+                    Vertex vertex1 = new Vertex(positions.get(positionIndex1), textCoords.get(textureIndex1), normals.get(normalIndex1));
+                    Vertex vertex2 = new Vertex(positions.get(positionIndex2), textCoords.get(textureIndex2), normals.get(normalIndex2));
+                    Vertex vertex3 = new Vertex(positions.get(positionIndex3), textCoords.get(textureIndex3), normals.get(normalIndex3));
                     triangles.add(new Triangle(vertex1, vertex2, vertex3));
                 }
 
@@ -99,6 +117,7 @@ public class Mesh {
             System.out.println("OBJ File '" + OBJFilePath +  "' not found.");
             e.printStackTrace();
         }
+
     }
 
     private Vector3 calculateCenter() {
