@@ -60,10 +60,11 @@ public class Triangle {
     public Vector3[] getTextureCoords() {
         return new Vector3[]{vertices[0].getTextCoord(), vertices[1].getTextCoord(), vertices[2].getTextCoord()};
     }
-    private void recalculateNormal() {
+    public Vector3 recalculateNormal() {
         Vector3 line1 = vertices[1].getPosition().subtract(vertices[0].getPosition()).normalized();
         Vector3 line2 = vertices[2].getPosition().subtract(vertices[0].getPosition()).normalized();
         normal = line1.cross(line2).normalized();
+        return normal;
     }
     public Triangle clone() {
         return new Triangle(vertices[0].clone(), vertices[1].clone(), vertices[2].clone());

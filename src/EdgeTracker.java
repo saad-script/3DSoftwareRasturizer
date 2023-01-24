@@ -2,32 +2,36 @@ public class EdgeTracker {
 
     private static final double EPSILON = 0.0001;
 
-    private Vector3 startEdgePoint;
-    private Vector3 endEdgePoint;
-    private Vector3 currentPosition;
+    private Vertex startEdgePoint;
+    private Vertex endEdgePoint;
+    private Vertex currentPosition;
     private double xIncY = 0;
     private double zIncY = 0;
+    private double uIncY = 0;
+    private double vIncY = 0;
 
     private double yIncX = 0;
     private double zIncX = 0;
+    private double uIncX = 0;
+    private double vIncX = 0;
 
-    private boolean useXStep = false;
+    private boolean useXStep;
 
-    public EdgeTracker(Vector3 startEdgePoint, Vector3 endEdgePoint) {
+    public EdgeTracker(Vertex startEdgePoint, Vertex endEdgePoint) {
         this(startEdgePoint, endEdgePoint, false);
     }
 
-    public EdgeTracker(Vector3 startEdgePoint, Vector3 endEdgePoint, boolean useXStep) {
+    public EdgeTracker(Vertex startEdgePoint, Vertex endEdgePoint, boolean useXStep) {
 
         if (useXStep) {
             if ((int) Math.ceil(startEdgePoint.getX()) > (int) Math.ceil(endEdgePoint.getX())) {
-                Vector3 temp = startEdgePoint;
+                Vertex temp = startEdgePoint;
                 startEdgePoint = endEdgePoint;
                 endEdgePoint = temp;
             }
         } else {
             if ((int) Math.ceil(startEdgePoint.getY()) > (int) Math.ceil(endEdgePoint.getY())) {
-                Vector3 temp = startEdgePoint;
+                Vertex temp = startEdgePoint;
                 startEdgePoint = endEdgePoint;
                 endEdgePoint = temp;
             }
@@ -42,20 +46,31 @@ public class EdgeTracker {
         if (useXStep) {
             yIncX = (startEdgePoint.getY() - endEdgePoint.getY()) / (startEdgePoint.getX() - endEdgePoint.getX());
             zIncX = (startEdgePoint.getZ() - endEdgePoint.getZ()) / (startEdgePoint.getX() - endEdgePoint.getX());
+            uIncX = (startEdgePoint.getU() - endEdgePoint.getU()) / (startEdgePoint.getX() - endEdgePoint.getX());
+            vIncX = (startEdgePoint.getV() - endEdgePoint.getV()) / (startEdgePoint.getX() - endEdgePoint.getX());
             double yPreIncX = yIncX * (Math.ceil(currentPosition.getX()) - currentPosition.getX());
             double zPreIncX = zIncX * (Math.ceil(currentPosition.getX()) - currentPosition.getX());
-            currentPosition.setX(Math.ceil(currentPosition.getX()));
-            currentPosition.setY(currentPosition.getY() + yPreIncX);
-            currentPosition.setZ(currentPosition.getZ() + zPreIncX);
+            double uPreIncX = uIncX * (Math.ceil(currentPosition.getX()) - currentPosition.getX());
+            double vPreIncX = vIncX * (Math.ceil(currentPosition.getX()) - currentPosition.getX());
+            currentPosition.getPosition().setX(Math.ceil(currentPosition.getX()));
+            currentPosition.getPosition().setY(currentPosition.getY() + yPreIncX);
+            currentPosition.getPosition().setZ(currentPosition.getZ() + zPreIncX);
+            currentPosition.getTextCoord().setX(currentPosition.getU() + uPreIncX);
+            currentPosition.getTextCoord().setY(currentPosition.getV() + vPreIncX);
         } else {
             xIncY = (startEdgePoint.getX() - endEdgePoint.getX()) / (startEdgePoint.getY() - endEdgePoint.getY());
             zIncY = (startEdgePoint.getZ() - endEdgePoint.getZ()) / (startEdgePoint.getY() - endEdgePoint.getY());
+            uIncY = (startEdgePoint.getU() - endEdgePoint.getU()) / (startEdgePoint.getY() - endEdgePoint.getY());
+            vIncY = (startEdgePoint.getV() - endEdgePoint.getV()) / (startEdgePoint.getY() - endEdgePoint.getY());
             double xPreIncY = xIncY * (Math.ceil(currentPosition.getY()) - currentPosition.getY());
             double zPreIncY = zIncY * (Math.ceil(currentPosition.getY()) - currentPosition.getY());
-            currentPosition.setY(Math.ceil(currentPosition.getY()));
-            currentPosition.setX(currentPosition.getX() + xPreIncY);
-            currentPosition.setZ(currentPosition.getZ() + zPreIncY);
-
+            double uPreIncY = uIncY * (Math.ceil(currentPosition.getY()) - currentPosition.getY());
+            double vPreIncY = vIncY * (Math.ceil(currentPosition.getY()) - currentPosition.getY());
+            currentPosition.getPosition().setY(Math.ceil(currentPosition.getY()));
+            currentPosition.getPosition().setX(currentPosition.getX() + xPreIncY);
+            currentPosition.getPosition().setZ(currentPosition.getZ() + zPreIncY);
+            currentPosition.getTextCoord().setX(currentPosition.getU() + uPreIncY);
+            currentPosition.getTextCoord().setY(currentPosition.getV() + vPreIncY);
         }
 
     }
@@ -67,14 +82,20 @@ public class EdgeTracker {
             stepY();
     }
     public void stepX() {
-        currentPosition.setX(currentPosition.getX() + 1);
-        currentPosition.setY(currentPosition.getY() + yIncX);
-        currentPosition.setZ(currentPosition.getZ() + zIncX);
+        currentPosition.getPosition().setX(currentPosition.getX() + 1);
+        currentPosition.getPosition().setY(currentPosition.getY() + yIncX);
+        currentPosition.getPosition().setZ(currentPosition.getZ() + zIncX);
+
+        currentPosition.getTextCoord().setX(currentPosition.getU() + uIncX);
+        currentPosition.getTextCoord().setY(currentPosition.getV() + vIncX);
     }
     public void stepY() {
-        currentPosition.setY(currentPosition.getY() + 1);
-        currentPosition.setX(currentPosition.getX() + xIncY);
-        currentPosition.setZ(currentPosition.getZ() + zIncY);
+        currentPosition.getPosition().setY(currentPosition.getY() + 1);
+        currentPosition.getPosition().setX(currentPosition.getX() + xIncY);
+        currentPosition.getPosition().setZ(currentPosition.getZ() + zIncY);
+
+        currentPosition.getTextCoord().setX(currentPosition.getU() + uIncY);
+        currentPosition.getTextCoord().setY(currentPosition.getV() + vIncY);
     }
 
     public int getYStart() {
@@ -93,15 +114,15 @@ public class EdgeTracker {
         return (int) Math.ceil(endEdgePoint.getX());
     }
 
-    public Vector3 getStartEdgePoint() {
+    public Vertex getStartEdgePoint() {
         return startEdgePoint;
     }
 
-    public Vector3 getEndEdgePoint() {
+    public Vertex getEndEdgePoint() {
         return endEdgePoint;
     }
 
-    public Vector3 getCurrentPosition() {
+    public Vertex getCurrentPosition() {
         return currentPosition;
     }
 

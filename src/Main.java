@@ -56,40 +56,43 @@ public class Main extends Application {
             }
         };
 
-
         timer.start();
-
-        //double distance = Triangle.pointDistanceToPlane(new Vector3(0, 0, 1), new Vector3(0, 0, 0), new Vector3(0, 0, -1));
-
-
-
     }
 
 
 
     public void loadScene() {
 
-        Vertex[] vertices = new Vertex[]
-                {
-                        new Vertex(0, 0, 0), new Vertex(0, 1, 0), new Vertex(1, 1, 0),
-                        new Vertex(0, 0, 0), new Vertex(1, 1, 0), new Vertex(1, 0, 0),
-                        new Vertex(1, 0, 0), new Vertex(1, 1, 0), new Vertex(1, 1, 1),
-                        new Vertex(1, 0, 0), new Vertex(1, 1, 1), new Vertex(1, 0, 1),
-                        new Vertex(1, 0, 1), new Vertex(1, 1, 1), new Vertex(0, 1, 1),
-                        new Vertex(1, 0, 1), new Vertex(0, 1, 1), new Vertex(0, 0, 1),
-                        new Vertex(0, 0, 1), new Vertex(0, 1, 1), new Vertex(0, 1, 0),
-                        new Vertex(0, 0, 1), new Vertex(0, 1, 0), new Vertex(0, 0, 0),
-                        new Vertex(0, 1, 0), new Vertex(0, 1, 1), new Vertex(1, 1, 1),
-                        new Vertex(0, 1, 0), new Vertex(1, 1, 1), new Vertex(1, 1, 0),
-                        new Vertex(1, 0, 1), new Vertex(0, 0, 1), new Vertex(0, 0, 0),
-                        new Vertex(1, 0, 1), new Vertex(0, 0, 0), new Vertex(1, 0, 0)
-                };
 
-        //Mesh mesh = new Mesh(vertices);
+        //Example of creating mesh manually using an array of vertices
+
+//        Vertex[] vertices = new Vertex[]
+//
+//                {
+//                        new Vertex(0, 0, 0), new Vertex(0, 1, 0), new Vertex(1, 1, 0),
+//                        new Vertex(0, 0, 0), new Vertex(1, 1, 0), new Vertex(1, 0, 0),
+//                        new Vertex(1, 0, 0), new Vertex(1, 1, 0), new Vertex(1, 1, 1),
+//                        new Vertex(1, 0, 0), new Vertex(1, 1, 1), new Vertex(1, 0, 1),
+//                        new Vertex(1, 0, 1), new Vertex(1, 1, 1), new Vertex(0, 1, 1),
+//                        new Vertex(1, 0, 1), new Vertex(0, 1, 1), new Vertex(0, 0, 1),
+//                        new Vertex(0, 0, 1), new Vertex(0, 1, 1), new Vertex(0, 1, 0),
+//                        new Vertex(0, 0, 1), new Vertex(0, 1, 0), new Vertex(0, 0, 0),
+//                        new Vertex(0, 1, 0), new Vertex(0, 1, 1), new Vertex(1, 1, 1),
+//                        new Vertex(0, 1, 0), new Vertex(1, 1, 1), new Vertex(1, 1, 0),
+//                        new Vertex(1, 0, 1), new Vertex(0, 0, 1), new Vertex(0, 0, 0),
+//                        new Vertex(1, 0, 1), new Vertex(0, 0, 0), new Vertex(1, 0, 0)
+//                };
+//
+//        Mesh mesh = new Mesh(vertices);
 
 
-        Mesh mesh = new Mesh("./res/Realistic_Body_Base_Mesh.obj");
 
+        //create mesh by importing from file
+        //Mesh mesh = new Mesh("./res/Realistic_Body_Base_Mesh.obj");
+
+        //import mesh with texture
+        Mesh mesh = new Mesh("./res/brick_cube.obj");
+        mesh.texture = new Texture("./res/brick_texture.png");
 
         if (!sceneRenderer.meshes.contains(mesh))
             sceneRenderer.meshes.add(mesh);
@@ -99,7 +102,6 @@ public class Main extends Application {
 
 
     public void draw() {
-        // draw
         sceneRenderer.nextFrame();
     }
 
@@ -124,9 +126,6 @@ public class Main extends Application {
         if (Input.mouseIsDown(MouseButton.PRIMARY)) {
             camera.rotate(-Input.getMouseDelta().getY(), Input.getMouseDelta().getX(), 0);
         }
-
-
-
     }
 
 }
