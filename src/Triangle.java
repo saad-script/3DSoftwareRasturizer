@@ -8,7 +8,7 @@ public class Triangle {
 
     Vertex[] vertices = new Vertex[3];
     Vector3 normal;
-    Color color;
+    double diffuse;
 
     public Triangle(Vertex point1, Vertex point2, Vertex point3) {
         vertices[0] = point1;
