@@ -1,3 +1,5 @@
+import java.util.Queue;
+
 public class Camera {
 
     private Vector3 position;
@@ -61,14 +63,12 @@ public class Camera {
         position = position.add(direction.normalized().multiply(amount));
     }
 
-    public void rotate(double angleX, double angleY, double angleZ) {
+    public void rotate(Vector3 axis, double angle) {
         Vector3 horizontalAxis = Vector3.UP.cross(forward).normalized();
-
-        Matrix4 m = Matrix4.getRotationMatrix(angleX, angleY, angleZ);
+        Quaternion q = Quaternion.fromAxisAngle(axis, angle);
+        Matrix4 m = q.toRotationMatrix();
         forward = forward.multiply(m).normalized();
-
         up = forward.cross(horizontalAxis).normalized();
-
     }
 
 }
