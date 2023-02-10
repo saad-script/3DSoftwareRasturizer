@@ -1,22 +1,20 @@
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.scene.Group;
-import javafx.scene.Scene;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.*;
+import javafx.scene.control.SplitPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+
+import java.io.File;
+import java.io.IOException;
 
 public class Main extends Application {
 
-    static int width = 1280;
-    static int height = 720;
-    static Camera camera = new Camera();
-
+    static Camera camera;
     static Stage mainWindow;
-    static SceneRenderer3D sceneRenderer;
+    static MeshRenderer sceneRenderer;
+    static Menu menu;
     static Input scene3DInput;
     static Scene windowScene;
     static AnimationTimer timer;
@@ -28,21 +26,22 @@ public class Main extends Application {
     }
 
     @Override
-    public void start(Stage primaryStage) {
+    public void start(Stage primaryStage) throws IOException {
         mainWindow = primaryStage;
-        mainWindow.setWidth(width);
-        mainWindow.setHeight(height);
-        sceneRenderer = new SceneRenderer3D(width, height);
+        mainWindow.setWidth(1280 + 250);
+        mainWindow.setHeight(720 + 50);
+        mainWindow.setTitle("JavaFX 3D Software Renderer");
+        sceneRenderer = new MeshRenderer(1280, 720);
+        menu = new Menu(250);
+        SplitPane splitPane = new SplitPane(menu, sceneRenderer);
+        splitPane.setDividerPosition(0, (250.0/(1280.0 + 250.0)));
 
-        Group group = new Group(sceneRenderer);
-        windowScene = new Scene(group, width, height);
+        windowScene = new Scene(splitPane);
         mainWindow.setScene(windowScene);
-        mainWindow.show();
 
         scene3DInput = new Input(sceneRenderer);
-        Main.camera.move(Vector3.BACKWARD, 10);
 
-        loadScene();
+        loadScene(null, null);
 
         timer = new AnimationTimer() {
             private long prevTime;
@@ -53,60 +52,37 @@ public class Main extends Application {
                 checkInput();
                 draw();
                 prevTime = currentTime;
-                System.out.println("Frame Rate: " + 1 / deltaTime);
             }
         };
 
         timer.start();
+        mainWindow.show();
     }
 
 
 
-    public void loadScene() {
+    public static void loadScene(File meshFile, File meshTextureFile) {
+        camera = new Camera(new Vector3(0, 0, -10), new Vector3(0, 0, 1));
 
+        if (meshFile == null) {
+            return;
+        }
 
-        //Example of creating mesh manually using an array of vertices
+        Mesh mesh = new Mesh(meshFile.getAbsolutePath());
 
-//        Vertex[] vertices = new Vertex[]
-//
-//                {
-//                        new Vertex(0, 0, 0), new Vertex(0, 1, 0), new Vertex(1, 1, 0),
-//                        new Vertex(0, 0, 0), new Vertex(1, 1, 0), new Vertex(1, 0, 0),
-//                        new Vertex(1, 0, 0), new Vertex(1, 1, 0), new Vertex(1, 1, 1),
-//                        new Vertex(1, 0, 0), new Vertex(1, 1, 1), new Vertex(1, 0, 1),
-//                        new Vertex(1, 0, 1), new Vertex(1, 1, 1), new Vertex(0, 1, 1),
-//                        new Vertex(1, 0, 1), new Vertex(0, 1, 1), new Vertex(0, 0, 1),
-//                        new Vertex(0, 0, 1), new Vertex(0, 1, 1), new Vertex(0, 1, 0),
-//                        new Vertex(0, 0, 1), new Vertex(0, 1, 0), new Vertex(0, 0, 0),
-//                        new Vertex(0, 1, 0), new Vertex(0, 1, 1), new Vertex(1, 1, 1),
-//                        new Vertex(0, 1, 0), new Vertex(1, 1, 1), new Vertex(1, 1, 0),
-//                        new Vertex(1, 0, 1), new Vertex(0, 0, 1), new Vertex(0, 0, 0),
-//                        new Vertex(1, 0, 1), new Vertex(0, 0, 0), new Vertex(1, 0, 0)
-//                };
-//
-//        Mesh mesh = new Mesh(vertices);
+        if (meshTextureFile != null)
+            mesh.texture = new Texture(meshTextureFile.getAbsolutePath());
 
-
-
-        //create mesh by importing from file
-        //Mesh mesh = new Mesh("./res/Realistic_Body_Base_Mesh.obj");
-
-        //import mesh with texture
-        Mesh mesh = new Mesh("./res/brick_cube.obj");
-        mesh.texture = new Texture("./res/brick_texture.png");
-
-        if (!sceneRenderer.meshes.contains(mesh))
-            sceneRenderer.meshes.add(mesh);
-
+        sceneRenderer.mesh = mesh;
     }
 
 
 
-    public void draw() {
+    public static void draw() {
         sceneRenderer.nextFrame();
     }
 
-    public void checkInput() {
+    public static void checkInput() {
 
         scene3DInput.pollInput(sceneRenderer);
 

@@ -1,33 +1,39 @@
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 
-public class SceneRenderer3D extends Canvas{
+public class MeshRenderer extends Canvas{
 
-    int canvasWidth;
-    int canvasHeight;
-    public ArrayList<Mesh> meshes = new ArrayList<>();
+    public enum DEPTH_SORTING {
+        DEPTH_BUFFER,
+        PAINTERS_ALG,
+        NONE
+    }
+
+    public Mesh mesh;
     public boolean wireframe = true;
     public boolean fill = true;
-    public boolean transparent = false;
+    public boolean cullNonVisibleFaces = true;
+    public boolean showStats = true;
+    public boolean diffuseLighting = true;
+    public DEPTH_SORTING depthSorting = DEPTH_SORTING.DEPTH_BUFFER;
+
+    public Color wireframeColor = Color.WHITE;
+    public Color backgroundColor = Color.BLACK;
+
     private final GraphicsContext canvasPen;
-    private final Queue<Triangle> renderQueue = new LinkedList<>();
-    private final double[][] depthBuffer;
-
-    private Mesh currentlyRenderingMesh;
+    private double[][] depthBuffer;
+    private LinkedList<Triangle> renderQueue = new LinkedList<>();
     private int numTrisCurrentlyRendering = 0;
+    private int numPixelsCurrentlyDrawn = 0;
 
-    public SceneRenderer3D(int canvasWidth, int canvasHeight) {
-        this.canvasWidth = canvasWidth;
-        this.canvasHeight = canvasHeight;
+    public MeshRenderer(int canvasWidth, int canvasHeight) {
         setWidth(canvasWidth);
         setHeight(canvasHeight);
-        depthBuffer = new double[canvasWidth][canvasWidth];
+        depthBuffer = new double[canvasWidth + 1][canvasWidth + 1];
         canvasPen = getGraphicsContext2D();
         clearCanvas();
     }
@@ -36,44 +42,78 @@ public class SceneRenderer3D extends Canvas{
         clearCanvas();
         clearDepthBuffer();
         render();
+        if (showStats)
+            showStats();
+    }
+    public void showStats() {
+        canvasPen.setStroke(Color.BLACK);
+        canvasPen.setFill(Color.WHITE);
+        double frameRate = (double) (Math.round((1 / Main.deltaTime) * 100)) / 100;
+        canvasPen.setFont(new Font(canvasPen.getFont().getName(), 16));
+        canvasPen.setLineWidth(5);
+
+        canvasPen.strokeText("Resolution: " + (int) getWidth() + " x " + (int) getHeight(), 20, 20);
+        canvasPen.strokeText("Frame Rate: " + frameRate, 20, 40);
+        canvasPen.strokeText("Tris Currently Rendering: " + numTrisCurrentlyRendering, 20, 60);
+        canvasPen.strokeText("Pixels Being Drawn: " + numPixelsCurrentlyDrawn, 20, 80);
+
+        canvasPen.fillText("Resolution: " + (int) getWidth() + " x " + (int) getHeight(), 20, 20);
+        canvasPen.fillText("Frame Rate: " + frameRate, 20, 40);
+        canvasPen.fillText("Tris Currently Rendering: " + numTrisCurrentlyRendering, 20, 60);
+        canvasPen.fillText("Pixels Being Drawn: " + numPixelsCurrentlyDrawn, 20, 80);
+
     }
 
     public void clearCanvas() {
-        canvasPen.setFill(Color.BLACK);
-        canvasPen.fillRect(0, 0, canvasWidth, canvasHeight);
+        canvasPen.setFill(backgroundColor);
+        canvasPen.fillRect(0, 0, getWidth(), getHeight());
     }
 
     public void clearDepthBuffer() {
-        for (int i = 0; i < canvasWidth; i++) {
-            for (int j = 0; j < canvasHeight; j++) {
+
+        if (depthSorting != DEPTH_SORTING.DEPTH_BUFFER) {
+            return;
+        }
+
+        for (int i = 0; i < getWidth(); i++) {
+            for (int j = 0; j < getHeight(); j++) {
                 depthBuffer[i][j] = 0.0;
             }
         }
     }
 
     public void render() {
-        for (Mesh mesh : meshes) {
-            currentlyRenderingMesh = mesh;
-            for (Triangle triangle : mesh.triangles) {
-                processTriangle(triangle, mesh.center, mesh.baseColor);
-            }
+        if (mesh == null)
+            return;
+
+        for (Triangle triangle : mesh.triangles) {
+            processTriangle(triangle, mesh.center, mesh.baseColor);
         }
 
         numTrisCurrentlyRendering = 0;
-        while (!renderQueue.isEmpty()) {
-            Triangle t = renderQueue.remove();
-            Vertex[] triPoints = t.getVertices();
+        numPixelsCurrentlyDrawn = 0;
 
-                drawScanLines(triPoints, t.diffuse);
-
-                if (wireframe)
-                    drawWireframe(triPoints, Color.BEIGE);
-
-                if (fill || wireframe)
-                    numTrisCurrentlyRendering++;
-
+        if (depthSorting == DEPTH_SORTING.PAINTERS_ALG) {
+            renderQueue.sort((t1, t2) -> {
+                double t1Depth = (t1.getPosition(0).getZ() + t1.getPosition(1).getZ() + t1.getPosition(2).getZ()) / 3;
+                double t2Depth = (t2.getPosition(0).getZ() + t2.getPosition(1).getZ() + t2.getPosition(2).getZ()) / 3;
+                return Double.compare(t1Depth, t2Depth);
+            });
         }
-        System.out.println("Triangles Currently Being Rendered: " + numTrisCurrentlyRendering);
+
+        for (Triangle t : renderQueue) {
+            Vertex[] triPoints = t.getVertices();
+            if (fill)
+                drawScanLines(triPoints, t.diffuse);
+        }
+        for (Triangle t : renderQueue) {
+            Vertex[] triPoints = t.getVertices();
+            if (wireframe)
+                drawWireframe(triPoints, wireframeColor);
+            if (fill || wireframe)
+                numTrisCurrentlyRendering++;
+        }
+        renderQueue.clear();
     }
 
 
@@ -83,15 +123,13 @@ public class SceneRenderer3D extends Canvas{
         Vertex[] transformedPoints = getTransformedPoints(position3DCoord, center);
 
         Vector3 cameraPos = Vector3.ZERO;
-        Vector3 cameraForward =  Vector3.FORWARD;
-
         Vector3 triNormal = calculateTriNormal(transformedPoints).normalized();
         Vector3 triToLightDirection = cameraPos.subtract(transformedPoints[0].getPosition()).normalized();
         Vector3 cameraToTriDirection = transformedPoints[0].getPosition().subtract(cameraPos).normalized();
         double diffuse = triToLightDirection.dot(triNormal);
-        boolean isVisible = triNormal.dot(cameraToTriDirection) < 0 || transparent;
+        boolean isVisible = triNormal.dot(cameraToTriDirection) < 0;
 
-        if (isVisible) {
+        if (isVisible || !cullNonVisibleFaces) {
             Vertex[] nearClippedTriPoints = clipTriAgainstPlane(Vector3.FORWARD, new Vector3(0, 0, 0.5), transformedPoints);
             Vertex[] projectedPoints = perspectiveDivide(getProjectedPoints(nearClippedTriPoints));
             Vertex[] canvasPoints = getCanvasPoints(projectedPoints);
@@ -103,12 +141,9 @@ public class SceneRenderer3D extends Canvas{
                 for (int j = 0; j < clippedTris.length; j+=3) {
                     Vertex[] triPoints = {clippedTris[j], clippedTris[j + 1], clippedTris[j + 2]};
                     Triangle t = new Triangle(triPoints);
+
                     t.normal = triNormal;
                     t.diffuse = diffuse;
-//                    t.color = new Color(Math.min(1, Math.max(0.1, diffuse) * baseColor.getRed()),
-//                                            Math.min(1, Math.max(0.1, diffuse) * baseColor.getGreen()),
-//                                            Math.min(1, Math.max(0.1, diffuse) * baseColor.getBlue()), 1);
-
                     renderQueue.add(t);
                 }
             }
@@ -134,7 +169,7 @@ public class SceneRenderer3D extends Canvas{
 
     public Vertex[] getProjectedPoints(Vertex[] transformedPoints) {
         Vertex[] projectedPoints = new Vertex[transformedPoints.length];
-        Matrix4 projectionMatrix = Matrix4.getProjectionMatrix(Main.width, Main.height, 50, 0.5, 1000);
+        Matrix4 projectionMatrix = Matrix4.getProjectionMatrix(getWidth(), getHeight(), 50, 0.5, 1000);
         for (int i = 0; i < transformedPoints.length; i++) {
             //System.out.println("Z Value before projection: " + transformedPoints[i].getZ());
             Vector3 pos = transformedPoints[i].getPosition().multiply(projectionMatrix);
@@ -149,8 +184,8 @@ public class SceneRenderer3D extends Canvas{
         for (int i = 0; i < projectedPoints.length; i++) {
             double x = projectedPoints[i].getX();
             double y = projectedPoints[i].getY();
-            x = (x + 1) * 0.5 * Main.width;
-            y = (y - 1) * -0.5 * Main.height;
+            x = (x + 1) * 0.5 * getWidth();
+            y = (y - 1) * -0.5 * getHeight();
             Vector3 pos = new Vector3(x, y, projectedPoints[i].getZ());
             canvasPos[i] = new Vertex(pos, projectedPoints[i].getTextCoord(), projectedPoints[i].getNormal());
         }
@@ -160,12 +195,10 @@ public class SceneRenderer3D extends Canvas{
     private Vertex[] perspectiveDivide(Vertex[] canvasPoints) {
         Vertex[] perspectivePoints = new Vertex[canvasPoints.length];
         for (int i = 0; i < canvasPoints.length; i++) {
-            //System.out.println("Before Perspective Divide: " + canvasPoints[i] + ", " + canvasPoints[i].getW());
             Vector3 pos = canvasPoints[i].getPosition().divide(canvasPoints[i].getW());
             Vector3 textCoord = canvasPoints[i].getTextCoord().divide(canvasPoints[i].getW());
             perspectivePoints[i] = new Vertex(pos, textCoord, canvasPoints[i].getNormal());
             perspectivePoints[i].getPosition().setZ(1 / canvasPoints[i].getW());
-            //System.out.println("After Perspective Divide: " + perspectivePoints[i] + ", " + perspectivePoints[i].getW());
         }
         return perspectivePoints;
     }
@@ -193,11 +226,11 @@ public class SceneRenderer3D extends Canvas{
                 if (i == 0)
                     clippedTris = clipTriAgainstPlane(new Vector3(0, 1, 0), new Vector3(0, 0, 0), triPoints);
                 else if (i == 1)
-                    clippedTris = clipTriAgainstPlane(new Vector3(0, -1, 0), new Vector3(0, Main.height - 1, 0), triPoints);
+                    clippedTris = clipTriAgainstPlane(new Vector3(0, -1, 0), new Vector3(0, getHeight() - 1, 0), triPoints);
                 else if (i == 2)
                     clippedTris = clipTriAgainstPlane(new Vector3(1, 0, 0), new Vector3(0, 0, 0), triPoints);
                 else
-                    clippedTris = clipTriAgainstPlane(new Vector3(-1, 0, 0), new Vector3(Main.width - 1, 0, 0), triPoints);
+                    clippedTris = clipTriAgainstPlane(new Vector3(-1, 0, 0), new Vector3(getWidth() - 1, 0, 0), triPoints);
 
                 q.addAll(List.of(clippedTris));
             }
@@ -300,23 +333,24 @@ public class SceneRenderer3D extends Canvas{
             for (int x = xStart; x < xEnd; x++) {
                 double pixelDepth = (zStart + (zInc * (x - xStart)));
 
-                if (pixelDepth > depthBuffer[x][y]) {
+                if (pixelDepth > depthBuffer[x][y] || depthSorting != DEPTH_SORTING.DEPTH_BUFFER) {
                     double u = (uStart + (uInc * (x - xStart)));
                     double v = (vStart + (vInc * (x - xStart)));
 
                     Color pixelColor;
-                    if (currentlyRenderingMesh.texture == null)
-                        pixelColor = currentlyRenderingMesh.baseColor;
+                    if (mesh.texture == null)
+                        pixelColor = mesh.baseColor;
                     else
-                        pixelColor = currentlyRenderingMesh.texture.sampleColor(u / pixelDepth, v / pixelDepth);
+                        pixelColor = mesh.texture.sampleColor(u / pixelDepth, v / pixelDepth);
 
-                    
-                    pixelColor = new Color(Math.min(1, Math.max(0.1, diffuse) * pixelColor.getRed()),
+                    if (diffuseLighting)
+                        pixelColor = new Color(Math.min(1, Math.max(0.1, diffuse) * pixelColor.getRed()),
                             Math.min(1, Math.max(0.1, diffuse) * pixelColor.getGreen()),
                             Math.min(1, Math.max(0.1, diffuse) * pixelColor.getBlue()), 1);
 
                     canvasPen.getPixelWriter().setColor(x, y, pixelColor);
                     depthBuffer[x][y] = pixelDepth;
+                    numPixelsCurrentlyDrawn++;
                 }
             }
             left.stepY();
@@ -352,7 +386,7 @@ public class SceneRenderer3D extends Canvas{
             int y = (int) Math.ceil(edge.getCurrentPosition().getY());
             double pixelDepth = edge.getCurrentPosition().getZ() * 1.01;
 
-            if (pixelDepth > depthBuffer[x][y] || transparent) {
+            if (pixelDepth > depthBuffer[x][y] || !cullNonVisibleFaces || depthSorting != DEPTH_SORTING.DEPTH_BUFFER) {
                 canvasPen.getPixelWriter().setColor(x, y, color);
             }
 
@@ -381,6 +415,39 @@ public class SceneRenderer3D extends Canvas{
             points[1] = points[2];
             points[2] = temp;
         }
+    }
+
+
+    @Override
+    public boolean isResizable() {
+        return true;
+    }
+
+    @Override
+    public double maxHeight(double width) {
+        return Double.POSITIVE_INFINITY;
+    }
+
+    @Override
+    public double maxWidth(double height) {
+        return Double.POSITIVE_INFINITY;
+    }
+
+    @Override
+    public double minWidth(double width) {
+        return 1;
+    }
+
+    @Override
+    public double minHeight(double height) {
+        return 1;
+    }
+
+    @Override
+    public void resize(double width, double height) {
+        this.setWidth((int) width);
+        this.setHeight((int) height);
+        depthBuffer = new double[(int) width + 1][(int) height + 1];
     }
 
 
