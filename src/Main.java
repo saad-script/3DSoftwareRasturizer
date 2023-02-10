@@ -124,7 +124,8 @@ public class Main extends Application {
 
 
         if (Input.mouseIsDown(MouseButton.PRIMARY)) {
-            camera.rotate(-Input.getMouseDelta().getY(), Input.getMouseDelta().getX(), 0);
+            camera.rotate(camera.getUp(), -Input.getMouseDelta().getX() * 0.1);
+            camera.rotate(camera.getRight(), -Input.getMouseDelta().getY() * 0.1);
         }
     }
 

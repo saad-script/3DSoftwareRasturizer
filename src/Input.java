@@ -12,7 +12,6 @@ public class Input {
     private static final HashSet<MouseButton> mouseDown = new HashSet<>();
     private static final Vector3 currMousePos = new Vector3(0, 0);
     private static final Vector3 prevMousePos = new Vector3(0, 0);
-    private static boolean mouseInBounds = false;
 
 
     public static void initializeInput(SceneRenderer3D sceneRenderer) {
@@ -71,7 +70,7 @@ public class Input {
     }
 
     public static Vector3 getMouseDelta() {
-        return currMousePos.subtract(prevMousePos).multiply(0.1);
+        return currMousePos.subtract(prevMousePos);
     }
 
 }
