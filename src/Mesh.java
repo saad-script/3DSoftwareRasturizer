@@ -8,7 +8,6 @@ public class Mesh {
 
     Triangle[] triangles;
     Vector3 center;
-
     Texture texture;
     Color baseColor = new Color(1, 0, 0, 1);
 
