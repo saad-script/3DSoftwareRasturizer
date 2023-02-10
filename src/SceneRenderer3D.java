@@ -64,7 +64,7 @@ public class SceneRenderer3D extends Canvas{
             Triangle t = renderQueue.remove();
             Vertex[] triPoints = t.getVertices();
 
-                drawScanLines(triPoints, t.normal);
+                drawScanLines(triPoints, t.diffuse);
 
                 if (wireframe)
                     drawWireframe(triPoints, Color.BEIGE);
@@ -104,6 +104,7 @@ public class SceneRenderer3D extends Canvas{
                     Vertex[] triPoints = {clippedTris[j], clippedTris[j + 1], clippedTris[j + 2]};
                     Triangle t = new Triangle(triPoints);
                     t.normal = triNormal;
+                    t.diffuse = diffuse;
 //                    t.color = new Color(Math.min(1, Math.max(0.1, diffuse) * baseColor.getRed()),
 //                                            Math.min(1, Math.max(0.1, diffuse) * baseColor.getGreen()),
 //                                            Math.min(1, Math.max(0.1, diffuse) * baseColor.getBlue()), 1);
@@ -259,7 +260,7 @@ public class SceneRenderer3D extends Canvas{
         return planeNormal.dot(point.subtract(planePoint));
     }
 
-    private void drawScanLines(Vertex[] triPoints, Vector3 normal) {
+    private void drawScanLines(Vertex[] triPoints, double diffuse) {
         sortPoints(triPoints);
 
         boolean flipped = ((triPoints[1].getX() - triPoints[0].getX()) * (triPoints[2].getY() - triPoints[0].getY()))
@@ -268,11 +269,11 @@ public class SceneRenderer3D extends Canvas{
         EdgeTracker topToMiddle = new EdgeTracker(triPoints[0], triPoints[1]);
         EdgeTracker middleToBottom = new EdgeTracker(triPoints[1], triPoints[2]);
 
-        fillHalfTriangle(topToBottom, topToMiddle, topToMiddle, flipped, normal);
-        fillHalfTriangle(topToBottom, middleToBottom, middleToBottom, flipped, normal);
+        fillHalfTriangle(topToBottom, topToMiddle, topToMiddle, flipped, diffuse);
+        fillHalfTriangle(topToBottom, middleToBottom, middleToBottom, flipped, diffuse);
     }
 
-    private void fillHalfTriangle(EdgeTracker edge1, EdgeTracker edge2, EdgeTracker shorterEdge, boolean flipped, Vector3 normal) {
+    private void fillHalfTriangle(EdgeTracker edge1, EdgeTracker edge2, EdgeTracker shorterEdge, boolean flipped, double diffuse) {
         EdgeTracker left = edge1;
         EdgeTracker right = edge2;
         if (flipped) {
@@ -309,10 +310,7 @@ public class SceneRenderer3D extends Canvas{
                     else
                         pixelColor = currentlyRenderingMesh.texture.sampleColor(u / pixelDepth, v / pixelDepth);
 
-                    Vector3 cameraPos = Vector3.ZERO;
-                    Vector3 triToLightDirection = cameraPos.subtract(edge1.getStartEdgePoint().getPosition()).normalized();
-                    double diffuse = triToLightDirection.dot(normal);
-
+                    
                     pixelColor = new Color(Math.min(1, Math.max(0.1, diffuse) * pixelColor.getRed()),
                             Math.min(1, Math.max(0.1, diffuse) * pixelColor.getGreen()),
                             Math.min(1, Math.max(0.1, diffuse) * pixelColor.getBlue()), 1);
