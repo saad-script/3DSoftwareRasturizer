@@ -17,6 +17,7 @@ public class Main extends Application {
 
     static Stage mainWindow;
     static SceneRenderer3D sceneRenderer;
+    static Input scene3DInput;
     static Scene windowScene;
     static AnimationTimer timer;
     static double deltaTime;
@@ -38,7 +39,7 @@ public class Main extends Application {
         mainWindow.setScene(windowScene);
         mainWindow.show();
 
-        Input.initializeInput(sceneRenderer);
+        scene3DInput = new Input(sceneRenderer);
         Main.camera.move(Vector3.BACKWARD, 10);
 
         loadScene();
@@ -107,25 +108,25 @@ public class Main extends Application {
 
     public void checkInput() {
 
-        Input.pollInput(sceneRenderer);
+        scene3DInput.pollInput(sceneRenderer);
 
-        if (Input.keyIsDown(KeyCode.W)) {
+        if (scene3DInput.keyIsDown(KeyCode.W)) {
             camera.move(camera.getForward(), 5 * Main.deltaTime);
         }
-        if (Input.keyIsDown(KeyCode.A)) {
+        if (scene3DInput.keyIsDown(KeyCode.A)) {
             camera.move(camera.getLeft(), 5 * Main.deltaTime);
         }
-        if (Input.keyIsDown(KeyCode.S)) {
+        if (scene3DInput.keyIsDown(KeyCode.S)) {
             camera.move(camera.getBackward(), 5 * Main.deltaTime);
         }
-        if (Input.keyIsDown(KeyCode.D)) {
+        if (scene3DInput.keyIsDown(KeyCode.D)) {
             camera.move(camera.getRight(), 5 * Main.deltaTime);
         }
 
 
-        if (Input.mouseIsDown(MouseButton.PRIMARY)) {
-            camera.rotate(camera.getUp(), -Input.getMouseDelta().getX() * 0.1);
-            camera.rotate(camera.getRight(), -Input.getMouseDelta().getY() * 0.1);
+        if (scene3DInput.mouseIsDown(MouseButton.PRIMARY)) {
+            camera.rotate(camera.getUp(), -scene3DInput.getMouseDelta().getX() * 0.1);
+            camera.rotate(camera.getRight(), -scene3DInput.getMouseDelta().getY() * 0.1);
         }
     }
 

@@ -1,6 +1,5 @@
 import javafx.scene.paint.Color;
 
-import java.awt.*;
 
 public class Vertex {
 
