@@ -30,4 +30,5 @@ hs_err_pid*
 # intellij auto-generated folders
 /out
 /libs
+.idea
 
